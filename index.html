@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>조 편성 프로그램</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            overflow-x: hidden;
+            zoom: 0.8;
+        }
+
+        /* 메인 레이아웃 */
+        .main-layout {
+            display: flex;
+            gap: 20px;
+            padding: 10px;
+            height: calc(130vh - 120px);
+        }
+
+        /* 왼쪽 30% 패널 */
+        .left-panel {
+            width: 35%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        .panel-section {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            padding: 15px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .section-header h3 {
+            margin: 0;
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .controls-inline {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .count-input {
+            padding: 6px 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 12px;
+            width: 50px;
+        }
+
+        .btn-sm {
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+
+        .panel-section h3 {
+            margin-bottom: 12px;
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .number-area {
+            background-color: #f8fafc;
+            border: 2px dashed #cbd5e0;
+            border-radius: 6px;
+            padding: 16px;
+            min-height: 187px;
+            transition: all 0.3s ease;
+        }
+
+        .number-area.drag-over {
+            border-color: #3b82f6;
+            background-color: #dbeafe;
+        }
+
+        .gender-split {
+            display: flex;
+            gap: 10px;
+        }
+
+        .gender-box {
+            flex: 1;
+            border: 2px dashed #cbd5e0;
+            border-radius: 6px;
+            padding: 26px;
+            min-height: 260px;
+            transition: all 0.3s ease;
+        }
+
+        .gender-box.male {
+            background-color: #dbeafe;
+            border-color: #3b82f6;
+        }
+
+        .gender-box.female {
+            background-color: #fce7f3;
+            border-color: #ec4899;
+        }
+
+        .gender-box.drag-over {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .gender-box h4 {
+            margin-bottom: 21px;
+            font-size: 31px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .gender-box.male h4 {
+            color: #1d4ed8;
+        }
+
+        .gender-box.female h4 {
+            color: #be185d;
+        }
+
+        .numbers-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        /* 오른쪽 70% 패널 */
+        .right-panel {
+            width: 65%;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 25px;
+            overflow-y: auto;
+        }
+
+        .team-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .team-header h1 {
+            color: #1e293b;
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .team-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .teams-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        /* 조별 카드 (간단한 디자인) */
+        .team {
+            border: none;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 600px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .team::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            border-radius: 12px 12px 0 0;
+        }
+
+        /* 조별 색상 테마 */
+        .team:nth-child(1) { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); }
+        .team:nth-child(1)::before { background: #3b82f6; }
+        .team:nth-child(2) { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); }
+        .team:nth-child(2)::before { background: #10b981; }
+        .team:nth-child(3) { background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%); }
+        .team:nth-child(3)::before { background: #f59e0b; }
+        .team:nth-child(4) { background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); }
+        .team:nth-child(4)::before { background: #ec4899; }
+        .team:nth-child(5) { background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); }
+        .team:nth-child(5)::before { background: #8b5cf6; }
+        .team:nth-child(6) { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); }
+        .team:nth-child(6)::before { background: #06d6a0; }
+        .team:nth-child(7) { background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%); }
+        .team:nth-child(7)::before { background: #ef4444; }
+        .team:nth-child(8) { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); }
+        .team:nth-child(8)::before { background: #0ea5e9; }
+        .team:nth-child(9) { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); }
+        .team:nth-child(9)::before { background: #d97706; }
+        .team:nth-child(10) { background: linear-gradient(135deg, #f7fee7 0%, #ecfccb 100%); }
+        .team:nth-child(10)::before { background: #65a30d; }
+
+        .team:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .team.drag-over {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .team-title {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .team-title h4 {
+            margin: 0;
+            color: #1e293b;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .team-members {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            min-height: 240px;
+            align-items: flex-start;
+            align-content: flex-start;
+        }
+
+        /* 헤더 스타일 */
+        .header {
+            background-color: white;
+            color: #333;
+            padding: 10px 15px;
+            border-radius: 6px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0 0 4px 0;
+            font-size: 20px;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
+
+        .header h1::before {
+            content: "👥";
+            margin-right: 10px;
+            font-size: 24px;
+        }
+
+        .header-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 8px 14px;
+            margin: 3px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+
+
+        .student-number {
+            background-color: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 7px 13px;
+            text-align: center;
+            cursor: grab;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            user-select: none;
+            min-width: 44px;
+            font-size: 18px;
+        }
+
+        .student-number:hover {
+            background-color: #e2e8f0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .student-number.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        /* 조별 편성 영역 (하단) */
+        .team-assignment {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        .team-assignment h3 {
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .teams-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .team {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 120px;
+            transition: all 0.3s ease;
+            background-color: #f8fafc;
+        }
+
+        .team.drag-over {
+            border-color: #3b82f6;
+            background-color: #dbeafe;
+        }
+
+        .team h4 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .team-members {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .member-number {
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-size: 36px;
+            font-weight: 600;
+            cursor: grab;
+            transition: all 0.3s ease;
+            user-select: none;
+            color: white;
+        }
+
+        /* 성별별 색상 */
+        .member-number.male {
+            background-color: #3b82f6;
+        }
+
+        .member-number.female {
+            background-color: #ec4899;
+        }
+
+        /* 성별이 지정되지 않은 경우 기본 색상 */
+        .member-number:not(.male):not(.female) {
+            background-color: #6b7280;
+        }
+
+        .member-number.male:hover {
+            background-color: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .member-number.female:hover {
+            background-color: #be185d;
+            transform: translateY(-1px);
+        }
+
+        .member-number:not(.male):not(.female):hover {
+            background-color: #4b5563;
+            transform: translateY(-1px);
+        }
+
+        .member-number.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+
+
+        .team-count-input {
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 80px;
+        }
+
+
+        /* 학생 번호 영역 (상단) */
+        .student-numbers-section {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .student-numbers-section h3 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .student-count-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .student-numbers-container {
+            display: flex;
+            gap: 20px;
+            max-width: 70%;
+            margin: 0 auto;
+        }
+
+        .student-numbers {
+            background-color: #f8fafc;
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 100px;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        .student-numbers.drag-over {
+            border-color: #3b82f6;
+            background-color: #dbeafe;
+        }
+
+        .unassigned-area {
+            background-color: #fef3c7;
+            border: 2px dashed #f59e0b;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 100px;
+            transition: all 0.3s ease;
+            flex: 1;
+            text-align: center;
+        }
+
+        .unassigned-area.drag-over {
+            border-color: #d97706;
+            background-color: #fef3c7;
+            transform: scale(1.02);
+        }
+
+        .unassigned-area h4 {
+            margin-bottom: 10px;
+            color: #92400e;
+            font-size: 14px;
+        }
+
+        .numbers-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        /* 성별 구분 영역 (중간) */
+        .gender-division {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .gender-division h3 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .gender-areas {
+            display: flex;
+            gap: 20px;
+        }
+
+        .gender-area {
+            flex: 1;
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 100px;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .gender-area.male {
+            background-color: #dbeafe;
+            border-color: #3b82f6;
+        }
+
+        .gender-area.female {
+            background-color: #fce7f3;
+            border-color: #ec4899;
+        }
+
+        .gender-area.drag-over {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .gender-area h4 {
+            margin-bottom: 15px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .gender-area.male h4 {
+            color: #1d4ed8;
+        }
+
+        .gender-area.female h4 {
+            color: #be185d;
+        }
+
+        .gender-numbers {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .gender-number {
+            border-radius: 5px;
+            padding: 5px 11px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: grab;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .gender-number.male {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .gender-number.female {
+            background-color: #ec4899;
+            color: white;
+        }
+
+        .gender-number:hover {
+            transform: translateY(-1px);
+        }
+
+        .gender-number.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>조 편성 프로그램</h1>
+        <div class="header-buttons">
+            <button class="btn btn-warning" onclick="resetAll()">전체 초기화</button>
+            <div class="dropdown" style="position: relative; display: inline-block;">
+                <button class="btn btn-info" onclick="toggleLoadMenu()">불러오기 ▼</button>
+                <div id="loadMenu" class="dropdown-content" style="display: none; position: absolute; background-color: white; min-width: 160px; box-shadow: 0px 8px 16px rgba(0,0,0,0.2); z-index: 1; border-radius: 4px; right: 0; top: 100%; margin-top: 5px;">
+                    <a href="#" onclick="loadAssignment()" style="color: black; padding: 8px 12px; text-decoration: none; display: block; font-size: 13px;">JSON 불러오기</a>
+                    <a href="#" onclick="loadFromCSV()" style="color: black; padding: 8px 12px; text-decoration: none; display: block; font-size: 13px;">CSV 불러오기</a>
+                </div>
+            </div>
+            <div class="dropdown" style="position: relative; display: inline-block;">
+                <button class="btn btn-success" onclick="toggleSaveMenu()">저장 ▼</button>
+                <div id="saveMenu" class="dropdown-content" style="display: none; position: absolute; background-color: white; min-width: 160px; box-shadow: 0px 8px 16px rgba(0,0,0,0.2); z-index: 1; border-radius: 4px; right: 0; top: 100%; margin-top: 5px;">
+                    <a href="#" onclick="saveAsText()" style="color: black; padding: 8px 12px; text-decoration: none; display: block; font-size: 13px;">텍스트 파일 다운로드</a>
+                    <a href="#" onclick="saveAsCSV()" style="color: black; padding: 8px 12px; text-decoration: none; display: block; font-size: 13px;">CSV 파일 다운로드</a>
+                    <a href="#" onclick="saveAsJSON()" style="color: black; padding: 8px 12px; text-decoration: none; display: block; font-size: 13px;">데이터 백업 (JSON)</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <!-- 왼쪽 30%: 학생 관리 -->
+        <div class="left-panel">
+            <!-- 학생 번호 -->
+            <div class="panel-section">
+                <div class="section-header">
+                    <h3>📋 학생 번호</h3>
+                    <div class="controls-inline">
+                        <input type="number" id="studentCount" class="count-input" value="35" min="1" max="50">
+                        <button class="btn btn-sm btn-primary" onclick="updateStudentCount()">변경</button>
+                    </div>
+                </div>
+                <div class="number-area">
+                    <div class="numbers-grid" id="numbersGrid">
+                        <!-- 학생 번호들이 여기에 동적으로 생성됩니다 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 남녀 구분 -->
+            <div class="panel-section">
+                <h3>👫 남녀 구분</h3>
+                <div class="gender-split">
+                    <div class="gender-box male" data-gender="male">
+                        <h4>👦 남학생</h4>
+                        <div class="gender-numbers" id="male-numbers">
+                            <!-- 남학생 번호들 -->
+                        </div>
+                    </div>
+                    <div class="gender-box female" data-gender="female">
+                        <h4>👧 여학생</h4>
+                        <div class="gender-numbers" id="female-numbers">
+                            <!-- 여학생 번호들 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 오른쪽 70%: 조별 편성 -->
+        <div class="right-panel">
+            <div class="team-header">
+                <h1>🏆 조별 편성</h1>
+                <div class="team-controls">
+                    <label>조 개수:</label>
+                    <input type="number" id="teamCount" class="count-input" value="6" min="1" max="10">
+                    <button class="btn btn-primary" onclick="updateTeams()">변경</button>
+                    <button class="btn btn-success" onclick="autoAssignBalanced()">자동 편성</button>
+                    <button class="btn btn-warning" onclick="shuffleAll()">재편성</button>
+                </div>
+            </div>
+            
+            <div class="teams-grid" id="teamsContainer">
+                <!-- 조들이 여기에 동적으로 생성됩니다 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let draggedElement = null;
+        let teams = [];
+        let availableNumbers = [];
+        let maleStudents = [];
+        let femaleStudents = [];
+        let totalStudents = 35;
+
+
+        // 초기화
+        function init() {
+            generateStudentNumbers();
+            updateTeams();
+            setupGenderAreas();
+            updateGenderDisplay();
+        }
+
+
+
+
+
+        // 성별 구분 영역 설정
+        function setupGenderAreas() {
+            document.querySelectorAll('.gender-box').forEach(area => {
+                area.addEventListener('dragover', handleGenderDragOver);
+                area.addEventListener('drop', handleGenderDrop);
+                area.addEventListener('dragleave', handleGenderDragLeave);
+            });
+        }
+
+        // 성별 번호 드래그 시작
+        function handleGenderDragStart(e) {
+            draggedElement = e.target;
+            e.target.classList.add('dragging');
+        }
+
+        // 성별 번호 드래그 종료
+        function handleGenderDragEnd(e) {
+            e.target.classList.remove('dragging');
+            draggedElement = null;
+        }
+
+        // 성별 영역 드래그 오버
+        function handleGenderDragOver(e) {
+            e.preventDefault();
+            // 학생 번호, 성별 번호, 또는 멤버 번호에서 드래그한 경우만 허용
+            if (draggedElement && (draggedElement.classList.contains('student-number') || 
+                                   draggedElement.classList.contains('gender-number') ||
+                                   draggedElement.classList.contains('member-number'))) {
+                e.currentTarget.classList.add('drag-over');
+            }
+        }
+
+        // 성별 영역 드래그 떠남
+        function handleGenderDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        // 성별 영역 드롭
+        function handleGenderDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            
+            if (draggedElement) {
+                const studentNumber = parseInt(draggedElement.dataset.number);
+                const targetGender = e.currentTarget.dataset.gender;
+                
+                // 기존 성별에서 제거
+                maleStudents = maleStudents.filter(num => num !== studentNumber);
+                femaleStudents = femaleStudents.filter(num => num !== studentNumber);
+                
+                // 새 성별에 추가
+                if (targetGender === 'male') {
+                    maleStudents.push(studentNumber);
+                } else {
+                    femaleStudents.push(studentNumber);
+                }
+                
+                // 팀에서도 제거 (이미 배정된 경우)
+                if (draggedElement.dataset.team !== undefined) {
+                    const fromTeamIndex = parseInt(draggedElement.dataset.team);
+                    teams[fromTeamIndex].members = teams[fromTeamIndex].members.filter(num => num !== studentNumber);
+                    teams.forEach((_, index) => updateTeamDisplay(index));
+                }
+                
+                // UI 업데이트
+                updateGenderDisplay();
+                generateStudentNumbers();
+            }
+        }
+
+        // 학생 수 변경
+        function updateStudentCount() {
+            const newCount = parseInt(document.getElementById('studentCount').value);
+            if (newCount < 1 || newCount > 50) {
+                alert('학생 수는 1명에서 50명 사이를 입력해주세요.');
+                return;
+            }
+            
+            if (newCount < totalStudents) {
+                // 학생 수가 줄어들 때 - 초과 학생 제거
+                for (let i = newCount + 1; i <= totalStudents; i++) {
+                    maleStudents = maleStudents.filter(num => num !== i);
+                    femaleStudents = femaleStudents.filter(num => num !== i);
+                    teams.forEach(team => {
+                        team.members = team.members.filter(num => num !== i);
+                    });
+                }
+            }
+            
+            totalStudents = newCount;
+            generateStudentNumbers();
+            updateGenderDisplay();
+            updateUnassignedDisplay();
+            teams.forEach((_, index) => updateTeamDisplay(index));
+        }
+
+        // 학생 번호 생성
+        function generateStudentNumbers() {
+            const numbersGrid = document.getElementById('numbersGrid');
+            const studentNumbersPanel = document.querySelector('.number-area');
+            numbersGrid.innerHTML = '';
+            availableNumbers = [];
+
+            // 학생 번호 패널에 드롭 이벤트 추가 (한 번만)
+            if (studentNumbersPanel && !studentNumbersPanel.hasAttribute('data-drop-enabled')) {
+                studentNumbersPanel.addEventListener('dragover', handleStudentPanelDragOver);
+                studentNumbersPanel.addEventListener('drop', handleStudentPanelDrop);
+                studentNumbersPanel.addEventListener('dragleave', handleStudentPanelDragLeave);
+                studentNumbersPanel.setAttribute('data-drop-enabled', 'true');
+            }
+
+            for (let i = 1; i <= totalStudents; i++) {
+                if (!isNumberAssigned(i) && !isNumberGenderAssigned(i)) {
+                    availableNumbers.push(i);
+                    const numberDiv = document.createElement('div');
+                    numberDiv.className = 'student-number';
+                    numberDiv.draggable = true;
+                    numberDiv.textContent = i;
+                    numberDiv.dataset.number = i;
+
+                    // 드래그 이벤트 추가
+                    numberDiv.addEventListener('dragstart', handleDragStart);
+                    numberDiv.addEventListener('dragend', handleDragEnd);
+
+                    numbersGrid.appendChild(numberDiv);
+                }
+            }
+        }
+
+        // 성별 할당 여부 확인
+        function isNumberGenderAssigned(number) {
+            return maleStudents.includes(number) || femaleStudents.includes(number);
+        }
+
+        // 성별 구분 표시 업데이트
+        function updateGenderDisplay() {
+            const maleContainer = document.getElementById('male-numbers');
+            const femaleContainer = document.getElementById('female-numbers');
+            
+            // 팀에 배정된 학생들은 제외하고 표시
+            const assignedNumbers = [];
+            teams.forEach(team => {
+                assignedNumbers.push(...team.members);
+            });
+            
+            // 남학생 표시 (팀에 배정되지 않은 학생만)
+            maleContainer.innerHTML = maleStudents
+                .filter(num => !assignedNumbers.includes(num))
+                .sort((a, b) => a - b)
+                .map(num => `<span class="gender-number male" draggable="true" data-number="${num}" data-gender="male">${num}</span>`)
+                .join('');
+            
+            // 여학생 표시 (팀에 배정되지 않은 학생만)
+            femaleContainer.innerHTML = femaleStudents
+                .filter(num => !assignedNumbers.includes(num))
+                .sort((a, b) => a - b)
+                .map(num => `<span class="gender-number female" draggable="true" data-number="${num}" data-gender="female">${num}</span>`)
+                .join('');
+            
+            // 드래그 이벤트 추가
+            document.querySelectorAll('.gender-number').forEach(element => {
+                element.addEventListener('dragstart', handleGenderDragStart);
+                element.addEventListener('dragend', handleGenderDragEnd);
+            });
+        }
+
+        // 번호가 이미 배정되었는지 확인
+        function isNumberAssigned(number) {
+            return teams.some(team => team.members.includes(number));
+        }
+
+        // 조 개수 업데이트
+        function updateTeams() {
+            const teamCount = parseInt(document.getElementById('teamCount').value);
+            const teamsContainer = document.getElementById('teamsContainer');
+            
+            // 기존 팀 데이터 보존하면서 팀 개수 조정
+            while (teams.length < teamCount) {
+                teams.push({ members: [] });
+            }
+            while (teams.length > teamCount) {
+                // 제거되는 팀의 멤버들을 다시 사용 가능한 번호로 되돌림
+                const removedTeam = teams.pop();
+                // 번호 그리드 새로고침은 나중에 한 번만
+            }
+
+            // UI 업데이트
+            teamsContainer.innerHTML = '';
+            teams.forEach((team, index) => {
+                const teamDiv = document.createElement('div');
+                teamDiv.className = 'team';
+                teamDiv.dataset.teamIndex = index;
+
+                // 드롭 이벤트 추가
+                teamDiv.addEventListener('dragover', handleDragOver);
+                teamDiv.addEventListener('drop', handleDrop);
+                teamDiv.addEventListener('dragleave', handleDragLeave);
+
+                teamsContainer.appendChild(teamDiv);
+            });
+
+            // 모든 조의 표시 업데이트
+            teams.forEach((_, index) => updateTeamDisplay(index));
+            
+            generateStudentNumbers(); // 번호 그리드 새로고침
+        }
+
+        // 드래그 시작
+        function handleDragStart(e) {
+            draggedElement = e.target;
+            e.target.classList.add('dragging');
+        }
+
+        // 드래그 종료
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+            draggedElement = null;
+        }
+
+        // 멤버 드래그 시작
+        function handleMemberDragStart(e) {
+            draggedElement = e.target;
+            e.target.classList.add('dragging');
+            e.stopPropagation(); // 이벤트 버블링 방지
+        }
+
+        // 멤버 드래그 종료
+        function handleMemberDragEnd(e) {
+            e.target.classList.remove('dragging');
+            draggedElement = null;
+        }
+
+        // 드래그 오버
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        // 드래그 떠남
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        // 드롭
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            
+            if (draggedElement) {
+                const teamIndex = parseInt(e.currentTarget.dataset.teamIndex);
+                const studentNumber = parseInt(draggedElement.dataset.number);
+                
+                // 기존 팀에서 제거 (멤버에서 드래그한 경우)
+                if (draggedElement.dataset.team !== undefined) {
+                    const fromTeamIndex = parseInt(draggedElement.dataset.team);
+                    teams[fromTeamIndex].members = teams[fromTeamIndex].members.filter(num => num !== studentNumber);
+                    updateTeamDisplay(fromTeamIndex);
+                }
+                
+                // 성별 구분에서 드래그한 경우 - 성별 정보는 유지하고 UI에서만 제거
+                if (draggedElement.classList.contains('gender-number')) {
+                    // 성별 배열에서는 제거하지 않고 성별 정보 유지
+                    // 단지 UI만 업데이트
+                }
+                
+                // 새 팀에 학생 추가
+                teams[teamIndex].members.push(studentNumber);
+                
+                // UI 업데이트
+                updateTeamDisplay(teamIndex);
+                updateGenderDisplay(); // 성별 표시도 업데이트
+                generateStudentNumbers(); // 사용 가능한 번호 새로고침
+            }
+        }
+
+        // 학생 번호 패널 드래그 오버
+        function handleStudentPanelDragOver(e) {
+            e.preventDefault();
+            // 멤버 번호 또는 성별 번호에서 드래그한 경우만 허용
+            if (draggedElement && (draggedElement.classList.contains('member-number') || draggedElement.classList.contains('gender-number'))) {
+                e.currentTarget.classList.add('drag-over');
+            }
+        }
+
+        // 학생 번호 패널 드래그 떠남
+        function handleStudentPanelDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        // 학생 번호 패널 드롭
+        function handleStudentPanelDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            
+            // 멤버 번호에서 드래그한 경우만 처리
+            if (draggedElement && draggedElement.classList.contains('member-number')) {
+                const studentNumber = parseInt(draggedElement.dataset.number);
+                const fromTeamIndex = parseInt(draggedElement.dataset.team);
+                
+                // 팀에서 제거
+                teams[fromTeamIndex].members = teams[fromTeamIndex].members.filter(num => num !== studentNumber);
+                
+                // UI 업데이트
+                updateTeamDisplay(fromTeamIndex);
+                generateStudentNumbers(); // 사용 가능한 번호 새로고침
+            }
+            // 성별 번호에서 드래그한 경우 처리
+            else if (draggedElement && draggedElement.classList.contains('gender-number')) {
+                const studentNumber = parseInt(draggedElement.dataset.number);
+                
+                // 성별 배열에서 제거
+                maleStudents = maleStudents.filter(num => num !== studentNumber);
+                femaleStudents = femaleStudents.filter(num => num !== studentNumber);
+                
+                // UI 업데이트
+                updateGenderDisplay();
+                generateStudentNumbers();
+            }
+        }
+
+        // 학생의 성별 확인 함수
+        function getStudentGender(studentNumber) {
+            if (maleStudents.includes(studentNumber)) {
+                return 'male';
+            } else if (femaleStudents.includes(studentNumber)) {
+                return 'female';
+            }
+            return 'unknown';
+        }
+
+        // 팀 표시 업데이트 (간단한 버전)
+        function updateTeamDisplay(teamIndex) {
+            const teamDiv = document.querySelector(`[data-team-index="${teamIndex}"]`);
+            if (!teamDiv) return;
+            
+            const team = teams[teamIndex];
+            
+            teamDiv.innerHTML = `
+                <div class="team-title">
+                    <h4>${teamIndex + 1}조</h4>
+                </div>
+                <div class="team-members" id="team-${teamIndex}">
+                    ${team.members.map(num => {
+                        const gender = getStudentGender(num);
+                        const genderClass = gender !== 'unknown' ? gender : '';
+                        return `<span class="member-number ${genderClass}" draggable="true" data-number="${num}" data-team="${teamIndex}" data-gender="${gender}" onclick="removeFromTeam(${teamIndex}, ${num})">${num}</span>`;
+                    }).join('')}
+                </div>
+            `;
+            
+            // 새로 생성된 멤버 번호들에 드래그 이벤트 추가
+            teamDiv.querySelectorAll('.member-number').forEach(memberElement => {
+                memberElement.addEventListener('dragstart', handleMemberDragStart);
+                memberElement.addEventListener('dragend', handleMemberDragEnd);
+            });
+        }
+
+        // 팀에서 제거 (성별 지정으로 되돌림)
+        function removeFromTeam(teamIndex, studentNumber) {
+            teams[teamIndex].members = teams[teamIndex].members.filter(num => num !== studentNumber);
+            updateTeamDisplay(teamIndex);
+            updateGenderDisplay();
+            generateStudentNumbers();
+        }
+
+        // 전체 초기화
+        function resetAll() {
+            if (confirm('모든 조 편성을 초기화하시겠습니까?')) {
+                teams.forEach(team => team.members = []);
+                maleStudents = [];
+                femaleStudents = [];
+                teams.forEach((_, index) => updateTeamDisplay(index));
+                updateGenderDisplay();
+                generateStudentNumbers();
+            }
+        }
+
+
+        // 균등 자동 편성
+        function autoAssignBalanced() {
+            resetAll();
+            
+            const allNumbers = Array.from({length: 35}, (_, i) => i + 1);
+            const shuffled = allNumbers.sort(() => Math.random() - 0.5);
+            
+            let currentTeam = 0;
+            shuffled.forEach(number => {
+                teams[currentTeam].members.push(number);
+                currentTeam = (currentTeam + 1) % teams.length;
+            });
+            
+            teams.forEach((_, index) => updateTeamDisplay(index));
+            generateStudentNumbers();
+        }
+
+        // 랜덤 편성
+        function autoAssignRandom() {
+            resetAll();
+            
+            const allNumbers = Array.from({length: 35}, (_, i) => i + 1);
+            const shuffled = allNumbers.sort(() => Math.random() - 0.5);
+            
+            shuffled.forEach(number => {
+                const randomTeam = Math.floor(Math.random() * teams.length);
+                teams[randomTeam].members.push(number);
+            });
+            
+            teams.forEach((_, index) => updateTeamDisplay(index));
+            generateStudentNumbers();
+        }
+
+        // 섞어서 재편성
+        function shuffleAll() {
+            const allAssignedNumbers = [];
+            teams.forEach(team => {
+                allAssignedNumbers.push(...team.members);
+                team.members = [];
+            });
+            
+            const shuffled = allAssignedNumbers.sort(() => Math.random() - 0.5);
+            let currentTeam = 0;
+            shuffled.forEach(number => {
+                teams[currentTeam].members.push(number);
+                currentTeam = (currentTeam + 1) % teams.length;
+            });
+            
+            teams.forEach((_, index) => updateTeamDisplay(index));
+            generateStudentNumbers();
+        }
+
+
+        // 저장 메뉴 토글
+        function toggleSaveMenu() {
+            const menu = document.getElementById('saveMenu');
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+            // 불러오기 메뉴는 닫기
+            document.getElementById('loadMenu').style.display = 'none';
+        }
+
+        // 불러오기 메뉴 토글
+        function toggleLoadMenu() {
+            const menu = document.getElementById('loadMenu');
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+            // 저장 메뉴는 닫기
+            document.getElementById('saveMenu').style.display = 'none';
+        }
+
+        // 메뉴 닫기 (다른 곳 클릭 시)
+        document.addEventListener('click', function(event) {
+            const saveMenu = document.getElementById('saveMenu');
+            const loadMenu = document.getElementById('loadMenu');
+            const dropdown = event.target.closest('.dropdown');
+            if (!dropdown) {
+                saveMenu.style.display = 'none';
+                loadMenu.style.display = 'none';
+            }
+        });
+
+        // 텍스트 파일 다운로드
+        function saveAsText() {
+            const assignment = getAssignmentData();
+            if (!assignment.result) {
+                alert('편성된 조가 없습니다.');
+                return;
+            }
+            
+            const content = `조 편성 결과\n${'='.repeat(20)}\n\n${assignment.result}\n\n남학생: ${maleStudents.sort((a,b) => a-b).join(', ')}\n여학생: ${femaleStudents.sort((a,b) => a-b).join(', ')}`;
+            
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `조편성_${new Date().toISOString().slice(0,10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            document.getElementById('saveMenu').style.display = 'none';
+        }
+
+        // JSON 백업 파일 다운로드
+        function saveAsJSON() {
+            const data = {
+                teams: teams,
+                maleStudents: maleStudents,
+                femaleStudents: femaleStudents,
+                timestamp: new Date().toISOString(),
+                version: '1.0'
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `조편성_백업_${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            document.getElementById('saveMenu').style.display = 'none';
+        }
+
+        // CSV 파일 다운로드
+        function saveAsCSV() {
+            const assignment = getAssignmentData();
+            if (!assignment.assignment || assignment.assignment.length === 0) {
+                alert('편성된 조가 없습니다.');
+                return;
+            }
+            
+            // CSV 헤더
+            let csvContent = '조,학생번호,성별\n';
+            
+            // 각 조별로 데이터 추가
+            assignment.assignment.forEach(team => {
+                team.members.forEach(studentNum => {
+                    const gender = getStudentGender(studentNum);
+                    const genderText = gender === 'male' ? '남' : gender === 'female' ? '여' : '미지정';
+                    csvContent += `${team.teamNumber}조,${studentNum},${genderText}\n`;
+                });
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `조편성_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            document.getElementById('saveMenu').style.display = 'none';
+        }
+
+
+
+        // 조 편성 데이터 가져오기
+        function getAssignmentData() {
+            const assignment = teams.map((team, index) => ({
+                teamNumber: index + 1,
+                members: team.members.sort((a, b) => a - b),
+                maleMembers: team.members.filter(num => maleStudents.includes(num)).sort((a, b) => a - b),
+                femaleMembers: team.members.filter(num => femaleStudents.includes(num)).sort((a, b) => a - b)
+            })).filter(team => team.members.length > 0);
+            
+            const result = assignment.map(team => {
+                const genderInfo = [];
+                if (team.maleMembers.length > 0) genderInfo.push(`남: ${team.maleMembers.join(', ')}`);
+                if (team.femaleMembers.length > 0) genderInfo.push(`여: ${team.femaleMembers.join(', ')}`);
+                const genderDetail = genderInfo.length > 0 ? ` (${genderInfo.join(', ')})` : '';
+                return `${team.teamNumber}조: ${team.members.join(', ')}${genderDetail}`;
+            }).join('\n');
+            
+            return { assignment, result };
+        }
+
+        // JSON 파일에서 불러오기
+        function loadAssignment() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        
+                        if (confirm('현재 작업을 덮어쓰고 파일 데이터를 불러오시겠습니까?')) {
+                            teams = data.teams || [];
+                            maleStudents = data.maleStudents || [];
+                            femaleStudents = data.femaleStudents || [];
+                            
+                            // UI 업데이트
+                            document.getElementById('teamCount').value = teams.length;
+                            updateTeams();
+                            updateGenderDisplay();
+                            generateStudentNumbers();
+                            
+                            alert('JSON 파일이 성공적으로 불러와졌습니다!');
+                        }
+                    } catch (error) {
+                        alert('JSON 파일 불러오기에 실패했습니다: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            
+            input.click();
+            document.getElementById('loadMenu').style.display = 'none';
+        }
+        
+        // CSV 파일에서 불러오기
+        function loadFromCSV() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.csv';
+            
+            input.onchange = function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const csvText = e.target.result;
+                        const lines = csvText.split('\n');
+                        
+                        if (lines.length < 2) {
+                            alert('CSV 파일 형식이 올바르지 않습니다.');
+                            return;
+                        }
+                        
+                        if (confirm('현재 작업을 덮어쓰고 CSV 파일 데이터를 불러오시겠습니까?')) {
+                            // 초기화
+                            teams = [];
+                            maleStudents = [];
+                            femaleStudents = [];
+                            
+                            // CSV 파싱 (첫 줄은 헤더이므로 제외)
+                            const teamMap = new Map();
+                            
+                            for (let i = 1; i < lines.length; i++) {
+                                const line = lines[i].trim();
+                                if (!line) continue;
+                                
+                                const [teamName, studentNum, gender] = line.split(',');
+                                if (!teamName || !studentNum) continue;
+                                
+                                const teamIndex = parseInt(teamName.replace('조', '')) - 1;
+                                const num = parseInt(studentNum);
+                                
+                                if (isNaN(teamIndex) || isNaN(num)) continue;
+                                
+                                // 팀 배열 확장
+                                while (teams.length <= teamIndex) {
+                                    teams.push({ members: [] });
+                                }
+                                
+                                teams[teamIndex].members.push(num);
+                                
+                                // 성별 정보 저장
+                                if (gender && gender.trim() === '남') {
+                                    maleStudents.push(num);
+                                } else if (gender && gender.trim() === '여') {
+                                    femaleStudents.push(num);
+                                }
+                            }
+                            
+                            // UI 업데이트
+                            document.getElementById('teamCount').value = teams.length;
+                            updateTeams();
+                            updateGenderDisplay();
+                            generateStudentNumbers();
+                            
+                            alert('CSV 파일이 성공적으로 불러와졌습니다!');
+                        }
+                    } catch (error) {
+                        alert('CSV 파일 불러오기에 실패했습니다: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            
+            input.click();
+            document.getElementById('loadMenu').style.display = 'none';
+        }
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
