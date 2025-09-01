@@ -107,7 +107,7 @@
             border: 2px dashed #cbd5e0;
             border-radius: 6px;
             padding: 26px;
-            min-height: 260px;
+            min-height: 350px;
             transition: all 0.3s ease;
         }
 
@@ -142,10 +142,11 @@
         }
 
         .numbers-grid {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(10, minmax(30px, 1fr));
             gap: 5px;
-            justify-content: center;
+            max-width: 400px;
+            margin: 0 auto;
         }
 
         /* 오른쪽 70% 패널 */
@@ -247,10 +248,10 @@
             margin-bottom: 15px;
         }
 
-        .team-title h4 {
+        .team .team-title h4 {
             margin: 0;
             color: #1e293b;
-            font-size: 24px;
+            font-size: 24px !important;
             font-weight: 700;
         }
 
@@ -536,12 +537,6 @@
             font-size: 14px;
         }
 
-        .numbers-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            justify-content: center;
-        }
 
         /* 성별 구분 영역 (중간) */
         .gender-division {
